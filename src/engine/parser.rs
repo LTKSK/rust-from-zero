@@ -143,13 +143,13 @@ pub fn parse(expr: &str) -> Result<AST, ParseError> {
                         seq = prev;
                         seq_or = prev_or;
                     } else {
-                        return Err(Box::new(ParseError::InvalidRightParen(i)));
+                        return Err(ParseError::InvalidRightParen(i));
                     }
                 }
                 '|' => {
                     if seq.is_empty() {
                         // ||とか|abcみたいな式が空のとき
-                        return Err(Box::new(ParseError::NoPrev(i)));
+                        return Err(ParseError::NoPrev(i));
                     } else {
                         let prev = take(&mut seq);
                         seq_or.push(AST::Seq(prev));
@@ -166,5 +166,17 @@ pub fn parse(expr: &str) -> Result<AST, ParseError> {
         }
     }
 
-    // TODO
+    // 閉じカッコがない
+    if !stack.is_empty() {
+        return Err(parseError::NorightParen);
+    }
+
+    // 式が空ならpushはしない
+    if !seq.is_empty() {
+        seq_or.push(AST::Seq(seq));
+    }
+
+    if let Some(ast) = fold_or(seq_or) {
+        // TODO
+    }
 }
