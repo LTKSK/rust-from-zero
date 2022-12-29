@@ -22,7 +22,7 @@ pub enum ParseError {
     InvalidEscape(usize, char), // 誤ったエスケープシーケンス
     InvalidRightParen(usize),   // 開きカッコなし
     NoPrev(usize),              // + | * ? の前に式がない
-    NorightParen,               // 閉じカッコなし
+    NoRightParen,               // 閉じカッコなし
     Empty,                      // 空のパターン
 }
 
@@ -38,21 +38,21 @@ impl Display for ParseError {
             ParseError::NoPrev(pos) => {
                 write!(f, "ParseError: no previous expression: pos = {pos}")
             }
-            ParseError::NorightParen(pos) => {
-                write!(f, "ParseError: no right parenthesis: pos = {pos}")
+            ParseError::NoRightParen => {
+                write!(f, "ParseError: no right parenthesis")
             }
             ParseError::Empty => write!(f, "ParseEror: empty expression"),
         }
     }
 }
 
-impl Error for ParseErorr {}
+impl Error for ParseError {}
 
 fn parse_escape(pos: usize, c: char) -> Result<AST, ParseError> {
     match c {
         '\\' | '(' | ')' | '|' | '+' | '*' | '?' => Ok(AST::Char(c)),
         _ => {
-            let err = ParseEror::InvalidEscape(pos, c);
+            let err = ParseError::InvalidEscape(pos, c);
             Err(err)
         }
     }
@@ -92,7 +92,7 @@ fn fold_or(mut seq_or: Vec<AST>) -> Option<AST> {
         // rootのorの左辺を左端の要素、右をOrにしようとすると、leafから順に↓のforのような詰め方をする必要がある
         seq_or.reverse();
         for s in seq_or {
-            ast = AST::Or(Box::new(s), Nox::new(ast));
+            ast = AST::Or(Box::new(s), Box::new(ast));
         }
         Some(ast)
     } else {
@@ -101,6 +101,7 @@ fn fold_or(mut seq_or: Vec<AST>) -> Option<AST> {
     }
 }
 
+/// exprを解釈してASTを返す
 pub fn parse(expr: &str) -> Result<AST, ParseError> {
     // 内部の状態を表現する。Charは文字列処理中。Escapeはエスケープシーケンス処理中
     enum ParseState {
@@ -117,8 +118,10 @@ pub fn parse(expr: &str) -> Result<AST, ParseError> {
         match &state {
             ParseState::Char => match c {
                 '+' => parse_plus_star_question(&mut seq, PSQ::Plus, i)?,
-                '*' => parse_plus_star_question(&mut seq, PSQ::State, i)?,
+                '*' => parse_plus_star_question(&mut seq, PSQ::Star, i)?,
                 '?' => parse_plus_star_question(&mut seq, PSQ::Question, i)?,
+                // カッコでコンテキストを置き換えるところがちょっと複雑
+                //
                 '(' => {
                     // 現在のコンテキストを保存しつつ、seqを空にする
                     let prev = take(&mut seq);
@@ -127,6 +130,7 @@ pub fn parse(expr: &str) -> Result<AST, ParseError> {
                     stack.push((prev, prev_or));
                 }
                 ')' => {
+                    // この時点でのseq及びseq_orは()の中を解釈した結果になっている
                     // コンテキストをスタックからpop
                     if let Some((mut prev, prev_or)) = stack.pop() {
                         // ()のような評価対象がない場合はpushしない
@@ -136,6 +140,7 @@ pub fn parse(expr: &str) -> Result<AST, ParseError> {
 
                         // Orの生成
                         if let Some(ast) = fold_or(seq_or) {
+                            // ここでprevにpushしているのは、prevが()を解釈する前の内容であるため
                             prev.push(ast);
                         }
 
@@ -166,9 +171,9 @@ pub fn parse(expr: &str) -> Result<AST, ParseError> {
         }
     }
 
-    // 閉じカッコがない
+    // stackは最終的に空になっているはず。そうでないなら閉じカッコがない
     if !stack.is_empty() {
-        return Err(parseError::NorightParen);
+        return Err(ParseError::NoRightParen);
     }
 
     // 式が空ならpushはしない
@@ -176,7 +181,10 @@ pub fn parse(expr: &str) -> Result<AST, ParseError> {
         seq_or.push(AST::Seq(seq));
     }
 
+    // Orの生成ができるならそれを返す
     if let Some(ast) = fold_or(seq_or) {
-        // TODO
+        Ok(ast)
+    } else {
+        Err(ParseError::Empty)
     }
 }
