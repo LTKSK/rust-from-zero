@@ -1,0 +1,1 @@
+[ゼロから学ぶRust](https://github.com/ytakano/rust_zero) の学習用repository
