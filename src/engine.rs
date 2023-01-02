@@ -1,4 +1,7 @@
+mod codegen;
 mod parser;
+
+use std::fmt::{self, Display};
 
 #[derive(Debug)]
 pub enum Instruction {
