@@ -71,14 +71,18 @@ impl Generator {
     /// L3:
     /// ```
     fn gen_star(&mut self, e: &AST) -> Result<(), CodeGenError> {
-        let split_addr = self.pc;
+        let l1 = self.pc;
         self.inc_pc()?;
         let split = Instruction::Split(self.pc, 0);
+        self.insts.push(split);
 
         self.gen_expr(e)?;
 
-        if let Some(Instruction::Split(_, l2)) = self.insts.get_mut(split_addr) {
-            *l2 = self.pc;
+        self.inc_pc()?;
+        self.insts.push(Instruction::Jump(l1));
+
+        if let Some(Instruction::Split(_, l3)) = self.insts.get_mut(l1) {
+            *l3 = self.pc;
             Ok(())
         } else {
             Err(CodeGenError::FailStar)
