@@ -86,4 +86,14 @@ mod tests {
         assert!(!do_matching("(ab|cd)+", "efa", true).unwrap());
         assert!(!do_matching("abc?", "acb", true).unwrap());
     }
+
+    #[test]
+    fn test_matching_multi_byte_characters() {
+        assert!(do_matching("あいう|えお", "あいう", true).unwrap());
+        assert!(do_matching("(ワク)*", "ワクワク", true).unwrap());
+
+        // parse成功でマッチ失敗
+        assert!(!do_matching("ほげ|ふが", "失敗", true).unwrap());
+        assert!(!do_matching("(ふー|ばー)+", "ばば", true).unwrap());
+    }
 }
