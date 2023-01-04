@@ -20,7 +20,7 @@ fn match_file(expr: &str, file_path: &str) -> Result<(), DynError> {
     for line in reader.lines() {
         let line = line?;
         // abcdみたいな入力のときは、abcd, bcd, cd ,cのように入力していく
-        let (result, found) = engine::do_matching(expr, &line, true)?
+        let (result, found) = engine::do_matching(expr, &line, true)?;
         if result {
             // resultがtrueなら第2要素には必ず文字列が入っている
             println!("{}", found.unwrap());
@@ -109,6 +109,7 @@ mod tests {
     #[test]
     fn test_ドットによる任意の1文字のマッチング() {
         assert!(do_matching("あ.か", "あいかえお", true).unwrap().0);
+        assert!(do_matching(".か.", "あいかえお", true).unwrap().0);
         assert!(do_matching("か..け", "かきくけこ", true).unwrap().0);
 
         // // 失敗パターン
