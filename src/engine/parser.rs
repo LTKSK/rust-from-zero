@@ -14,6 +14,8 @@ pub enum AST {
     Question(Box<AST>),     // 正規表現の?
     Or(Box<AST>, Box<AST>), // 正規表現の|
     Dot,                    // 正規表現の. 任意の位置文字
+    Hat,                    // 正規表現の^
+    Dollar,                 // 正規表現の$
     // 複数のASTをまとめて扱うために使う
     Seq(Vec<AST>),
 }
