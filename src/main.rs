@@ -20,11 +20,11 @@ fn match_file(expr: &str, file_path: &str) -> Result<(), DynError> {
     for line in reader.lines() {
         let line = line?;
         // abcdみたいな入力のときは、abcd, bcd, cd ,cのように入力していく
-        for (i, _) in line.char_indices() {
-            if engine::do_matching(expr, &line[i..], true)? {
-                println!("{line}");
-                break;
-            }
+        let (result, found) = engine::do_matching(expr, &line, true)?
+        if result {
+            // resultがtrueなら第2要素には必ず文字列が入っている
+            println!("{}", found.unwrap());
+            break;
         }
     }
 
@@ -77,42 +77,42 @@ mod tests {
         assert!(do_matching("abc)", "bbb", true).is_err());
 
         // parse成功でマッチ成功
-        assert!(do_matching("abc|def", "def", true).unwrap());
-        assert!(do_matching("(abc)*", "abcabc", true).unwrap());
-        assert!(do_matching("(ab|cd)+", "abcdcd", true).unwrap());
-        assert!(do_matching("abc?", "abd", true).unwrap());
+        assert!(do_matching("abc|def", "def", true).unwrap().0);
+        assert!(do_matching("(abc)*", "abcabc", true).unwrap().0);
+        assert!(do_matching("(ab|cd)+", "abcdcd", true).unwrap().0);
+        assert!(do_matching("abc?", "abd", true).unwrap().0);
 
         // parse成功でマッチ失敗
-        assert!(!do_matching("abc|def", "efa", true).unwrap());
-        assert!(!do_matching("(ab|cd)+", "efa", true).unwrap());
-        assert!(!do_matching("abc?", "acb", true).unwrap());
+        assert!(!do_matching("abc|def", "efa", true).unwrap().0);
+        assert!(!do_matching("(ab|cd)+", "efa", true).unwrap().0);
+        assert!(!do_matching("abc?", "acb", true).unwrap().0);
     }
 
     #[test]
     fn test_matching_multi_byte_characters() {
-        assert!(do_matching("あいう|えお", "あいう", true).unwrap());
-        assert!(do_matching("(ワク)*", "ワクワク", true).unwrap());
+        assert!(do_matching("あいう|えお", "あいう", true).unwrap().0);
+        assert!(do_matching("(ワク)*", "ワクワク", true).unwrap().0);
 
         // parse成功でマッチ失敗
-        assert!(!do_matching("ほげ|ふが", "失敗", true).unwrap());
-        assert!(!do_matching("(ふー|ばー)+", "ばば", true).unwrap());
+        assert!(!do_matching("ほげ|ふが", "失敗", true).unwrap().0);
+        assert!(!do_matching("(ふー|ばー)+", "ばば", true).unwrap().0);
     }
 
     #[test]
     fn test_escape文字() {
-        assert!(do_matching("\\.あいう", ".あいうえお", true).unwrap());
-        assert!(do_matching("\\?あいう", "?あいうえお", true).unwrap());
-        assert!(do_matching("\\+あいう", "+あいうえお", true).unwrap());
-        assert!(do_matching("\\*あいう", "*あいうえお", true).unwrap());
+        assert!(do_matching("\\.あいう", ".あいうえお", true).unwrap().0);
+        assert!(do_matching("\\?あいう", "?あいうえお", true).unwrap().0);
+        assert!(do_matching("\\+あいう", "+あいうえお", true).unwrap().0);
+        assert!(do_matching("\\*あいう", "*あいうえお", true).unwrap().0);
     }
 
     #[test]
     fn test_ドットによる任意の1文字のマッチング() {
-        assert!(do_matching("あ.か", "あいかえお", true).unwrap());
-        assert!(do_matching("か..け", "かきくけこ", true).unwrap());
+        assert!(do_matching("あ.か", "あいかえお", true).unwrap().0);
+        assert!(do_matching("か..け", "かきくけこ", true).unwrap().0);
 
         // // 失敗パターン
-        assert!(!do_matching("い.え", "あいえお", true).unwrap());
-        assert!(!do_matching(".あ.", "かきくけこ", true).unwrap());
+        assert!(!do_matching("い.え", "あいえお", true).unwrap().0);
+        assert!(!do_matching(".あ.", "かきくけこ", true).unwrap().0);
     }
 }

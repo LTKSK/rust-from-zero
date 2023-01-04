@@ -45,11 +45,22 @@ impl Display for Instruction {
 /// マッチングに失敗したらOk(false)
 /// 入力の正規表現が不正な値であったり、内部的な実装エラー時はErrを返す
 ///
-pub fn do_matching(expr: &str, line: &str, is_depth: bool) -> Result<bool, DynError> {
+pub fn do_matching(
+    expr: &str,
+    line: &str,
+    is_depth: bool,
+) -> Result<(bool, Option<String>), DynError> {
     let ast = parser::parse(expr)?;
     let code = codegen::get_code(&ast)?;
+
     let line = line.chars().collect::<Vec<char>>();
-    Ok(evaluator::eval(&code, &line, is_depth)?)
+    for i in 0..line.len() {
+        let line = &line[i..];
+        if evaluator::eval(&code, line, is_depth)? {
+            return Ok((true, Some(line.into_iter().collect::<String>())));
+        }
+    }
+    Ok((false, None))
 }
 /// 正規表現をパースしてコード生成し、
 /// ASTと命令列を標準出力に表示する
