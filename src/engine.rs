@@ -8,6 +8,7 @@ use std::fmt::{self, Display};
 #[derive(Debug)]
 pub enum Instruction {
     Char(char),
+    Dot,
     Match,
     Jump(usize),
     Split(usize, usize),
@@ -17,6 +18,7 @@ impl Display for Instruction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Instruction::Char(c) => write!(f, "char {}", c),
+            Instruction::Dot => write!(f, "any character is ok"),
             Instruction::Match => write!(f, "match"),
             Instruction::Jump(addr) => write!(f, "jump {:>04}", addr),
             Instruction::Split(addr1, addr2) => write!(f, "split {:>04}, {:>04}", addr1, addr2),

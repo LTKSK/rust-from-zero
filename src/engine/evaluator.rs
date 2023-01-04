@@ -36,6 +36,9 @@ fn eval_depth(
             return Err(EvalError::InvalidPC);
         };
 
+        println!("inst: {:?}", inst);
+        println!("line: {:?}", line);
+
         match next {
             Instruction::Char(c) => {
                 if let Some(sp_c) = line.get(sp) {
@@ -48,6 +51,11 @@ fn eval_depth(
                 } else {
                     return Ok(false);
                 }
+            }
+            Instruction::Dot => {
+                // dotのときは、対象の文字があれば良いので、文字があるならpcとspをインクリメント
+                safe_add(&mut pc, &1, || EvalError::PCOverFlow)?;
+                safe_add(&mut sp, &1, || EvalError::SPOverFlow)?;
             }
             Instruction::Match => {
                 return Ok(true);

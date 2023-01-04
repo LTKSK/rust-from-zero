@@ -97,4 +97,22 @@ mod tests {
         assert!(!do_matching("ほげ|ふが", "失敗", true).unwrap());
         assert!(!do_matching("(ふー|ばー)+", "ばば", true).unwrap());
     }
+
+    #[test]
+    fn test_escape文字() {
+        assert!(do_matching("\\.あいう", ".あいうえお", true).unwrap());
+        assert!(do_matching("\\?あいう", "?あいうえお", true).unwrap());
+        assert!(do_matching("\\+あいう", "+あいうえお", true).unwrap());
+        assert!(do_matching("\\*あいう", "*あいうえお", true).unwrap());
+    }
+
+    #[test]
+    fn test_ドットによる任意の1文字のマッチング() {
+        assert!(do_matching("あ.か", "あいかえお", true).unwrap());
+        assert!(do_matching("か..け", "かきくけこ", true).unwrap());
+
+        // // 失敗パターン
+        assert!(!do_matching("い.え", "あいえお", true).unwrap());
+        assert!(!do_matching(".あ.", "かきくけこ", true).unwrap());
+    }
 }

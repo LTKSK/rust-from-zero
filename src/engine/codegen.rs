@@ -46,6 +46,12 @@ impl Generator {
         Ok(())
     }
 
+    fn gen_dot(&mut self) -> Result<(), CodeGenError> {
+        self.insts.push(Instruction::Dot);
+        self.inc_pc()?;
+        Ok(())
+    }
+
     /// ```text
     /// split L1, L2
     /// L1: eのコード
@@ -156,6 +162,7 @@ impl Generator {
     fn gen_expr(&mut self, ast: &AST) -> Result<(), CodeGenError> {
         match ast {
             AST::Char(c) => self.gen_char(*c)?,
+            AST::Dot => self.gen_dot()?,
             AST::Or(e1, e2) => self.gen_or(e1, e2)?,
             AST::Plus(e) => self.gen_plus(e)?,
             AST::Star(e) => self.gen_star(e)?,

@@ -13,6 +13,7 @@ pub enum AST {
     Star(Box<AST>),         // 正規表現の*
     Question(Box<AST>),     // 正規表現の?
     Or(Box<AST>, Box<AST>), // 正規表現の|
+    Dot,                    // 正規表現の. 任意の位置文字
     // 複数のASTをまとめて扱うために使う
     Seq(Vec<AST>),
 }
@@ -50,7 +51,7 @@ impl Error for ParseError {}
 
 fn parse_escape(pos: usize, c: char) -> Result<AST, ParseError> {
     match c {
-        '\\' | '(' | ')' | '|' | '+' | '*' | '?' => Ok(AST::Char(c)),
+        '\\' | '(' | ')' | '|' | '+' | '*' | '?' | '.' => Ok(AST::Char(c)),
         _ => {
             let err = ParseError::InvalidEscape(pos, c);
             Err(err)
@@ -161,6 +162,7 @@ pub fn parse(expr: &str) -> Result<AST, ParseError> {
                     }
                 }
                 '\\' => state = ParseState::Escape,
+                '.' => seq.push(AST::Dot),
                 _ => seq.push(AST::Char(c)),
             },
             ParseState::Escape => {
