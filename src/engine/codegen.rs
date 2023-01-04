@@ -46,6 +46,11 @@ impl Generator {
         Ok(())
     }
 
+    /// ```text
+    /// split L1, L2
+    /// L1: eのコード
+    /// L2:
+    /// ```
     fn gen_question(&mut self, e: &AST) -> Result<(), CodeGenError> {
         // split L1, L2
         let split_addr = self.pc;
@@ -64,6 +69,7 @@ impl Generator {
             Err(CodeGenError::FailQuestion)
         }
     }
+
     /// ```text
     /// L1: split L2, L3
     /// L2: eのコード

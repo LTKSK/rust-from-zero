@@ -69,7 +69,7 @@ fn parse_plus_star_question(
     ast_type: PSQ,
     pos: usize,
 ) -> Result<(), ParseError> {
-    // 直前の要素が必要なのでケツから一つpop
+    // *?+は直前の要素が必要なのでケツから一つpop
     if let Some(prev) = seq.pop() {
         let ast = match ast_type {
             PSQ::Plus => AST::Plus(Box::new(prev)),

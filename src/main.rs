@@ -19,6 +19,7 @@ fn match_file(expr: &str, file_path: &str) -> Result<(), DynError> {
 
     for line in reader.lines() {
         let line = line?;
+        // abcdみたいな入力のときは、abcd, bcd, cd ,cのように入力していく
         for (i, _) in line.char_indices() {
             if engine::do_matching(expr, &line[i..], true)? {
                 println!("{line}");
