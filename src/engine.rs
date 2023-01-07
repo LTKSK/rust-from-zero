@@ -50,10 +50,28 @@ pub fn do_matching(
     line: &str,
     is_depth: bool,
 ) -> Result<(bool, Option<String>), DynError> {
-    let ast = parser::parse(expr)?;
-    let code = codegen::get_code(&ast)?;
+    let ast_state = parser::parse(expr)?;
+    let code = codegen::get_code(&ast_state.ast)?;
 
     let line = line.chars().collect::<Vec<char>>();
+
+    if ast_state.has_hat {
+        if evaluator::eval(&code, &line, is_depth)? {
+            return Ok((true, Some(line.into_iter().collect::<String>())));
+        } else {
+            return Ok((false, None));
+        }
+    }
+
+    if ast_state.has_doller {
+        for i in (0..line.len()).rev() {
+            let line = &line[i..];
+            if evaluator::eval(&code, line, is_depth)? {
+                return Ok((true, Some(line.into_iter().collect::<String>())));
+            }
+        }
+    }
+
     for i in 0..line.len() {
         let line = &line[i..];
         if evaluator::eval(&code, line, is_depth)? {
@@ -66,12 +84,12 @@ pub fn do_matching(
 /// ASTと命令列を標準出力に表示する
 pub fn print(expr: &str) -> Result<(), DynError> {
     println!("expr: {expr}");
-    let ast = parser::parse(expr)?;
-    println!("AST: {:?}", ast);
+    let ast_state = parser::parse(expr)?;
+    println!("AST: {:?}", ast_state.ast);
 
     println!();
     println!("code:");
-    let code = codegen::get_code(&ast)?;
+    let code = codegen::get_code(&ast_state.ast)?;
     for (n, c) in code.iter().enumerate() {
         println!("{:>04}: {c}", n);
     }

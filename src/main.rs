@@ -116,4 +116,16 @@ mod tests {
         assert!(!do_matching("い.え", "あいえお", true).unwrap().0);
         assert!(!do_matching(".あ.", "かきくけこ", true).unwrap().0);
     }
+
+    #[test]
+    fn test_ハットでの先頭一致() {
+        assert!(do_matching("^あいう", "あいうえお", true).unwrap().0);
+        assert!(!do_matching("^あいう", "えおあいう", true).unwrap().0);
+    }
+
+    #[test]
+    fn test_ダラーでの後方一致() {
+        assert!(do_matching("うえお$", "あいうえお", true).unwrap().0);
+        assert!(!do_matching("うえお$", "うえおか", true).unwrap().0);
+    }
 }

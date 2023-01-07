@@ -14,10 +14,14 @@ pub enum AST {
     Question(Box<AST>),     // 正規表現の?
     Or(Box<AST>, Box<AST>), // 正規表現の|
     Dot,                    // 正規表現の. 任意の位置文字
-    Hat,                    // 正規表現の^
-    Dollar,                 // 正規表現の$
     // 複数のASTをまとめて扱うために使う
     Seq(Vec<AST>),
+}
+
+pub struct AstState {
+    pub ast: AST,
+    pub has_hat: bool,
+    pub has_doller: bool,
 }
 
 #[derive(Debug)]
@@ -26,6 +30,8 @@ pub enum ParseError {
     InvalidRightParen(usize),   // 開きカッコなし
     NoPrev(usize),              // + | * ? の前に式がない
     NoRightParen,               // 閉じカッコなし
+    InvalidHat,                 // ^が先頭以外にある
+    InvalidDollar,              // $が末尾以外にある
     Empty,                      // 空のパターン
 }
 
@@ -44,6 +50,8 @@ impl Display for ParseError {
             ParseError::NoRightParen => {
                 write!(f, "ParseError: no right parenthesis")
             }
+            ParseError::InvalidHat => write!(f, "ParseEror: ^ is not at the beggining"),
+            ParseError::InvalidDollar => write!(f, "ParseEror: $ is not at end"),
             ParseError::Empty => write!(f, "ParseEror: empty expression"),
         }
     }
@@ -53,7 +61,7 @@ impl Error for ParseError {}
 
 fn parse_escape(pos: usize, c: char) -> Result<AST, ParseError> {
     match c {
-        '\\' | '(' | ')' | '|' | '+' | '*' | '?' | '.' => Ok(AST::Char(c)),
+        '\\' | '(' | ')' | '|' | '+' | '*' | '?' | '.' | '^' | '$' => Ok(AST::Char(c)),
         _ => {
             let err = ParseError::InvalidEscape(pos, c);
             Err(err)
@@ -105,7 +113,7 @@ fn fold_or(mut seq_or: Vec<AST>) -> Option<AST> {
 }
 
 /// exprを解釈してASTを返す
-pub fn parse(expr: &str) -> Result<AST, ParseError> {
+pub fn parse(expr: &str) -> Result<AstState, ParseError> {
     // 内部の状態を表現する。Charは文字列処理中。Escapeはエスケープシーケンス処理中
     enum ParseState {
         Char,
@@ -116,6 +124,8 @@ pub fn parse(expr: &str) -> Result<AST, ParseError> {
     let mut seq_or = Vec::new(); // Orコンテキスト
     let mut stack = Vec::new(); // コンテキストのスタック
     let mut state = ParseState::Char;
+    let mut has_hat = false;
+    let mut has_dollar = false;
 
     for (i, c) in expr.chars().enumerate() {
         match &state {
@@ -124,7 +134,6 @@ pub fn parse(expr: &str) -> Result<AST, ParseError> {
                 '*' => parse_plus_star_question(&mut seq, PSQ::Star, i)?,
                 '?' => parse_plus_star_question(&mut seq, PSQ::Question, i)?,
                 // カッコでコンテキストを置き換えるところがちょっと複雑
-                //
                 '(' => {
                     // 現在のコンテキストを保存しつつ、seqを空にする
                     let prev = take(&mut seq);
@@ -165,6 +174,20 @@ pub fn parse(expr: &str) -> Result<AST, ParseError> {
                 }
                 '\\' => state = ParseState::Escape,
                 '.' => seq.push(AST::Dot),
+                '^' => {
+                    if i == 0 {
+                        has_hat = true;
+                    } else {
+                        return Err(ParseError::InvalidHat);
+                    }
+                }
+                '$' => {
+                    if expr.chars().count() - 1 == i {
+                        has_dollar = true;
+                    } else {
+                        return Err(ParseError::InvalidDollar);
+                    }
+                }
                 _ => seq.push(AST::Char(c)),
             },
             ParseState::Escape => {
@@ -187,7 +210,11 @@ pub fn parse(expr: &str) -> Result<AST, ParseError> {
 
     // Orの生成ができるならそれを返す
     if let Some(ast) = fold_or(seq_or) {
-        Ok(ast)
+        Ok(AstState {
+            ast: ast,
+            has_hat: has_hat,
+            has_doller: has_dollar,
+        })
     } else {
         Err(ParseError::Empty)
     }
