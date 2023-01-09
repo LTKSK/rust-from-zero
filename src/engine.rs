@@ -66,10 +66,12 @@ pub fn do_matching(
     if ast_state.has_doller {
         for i in (0..line.len()).rev() {
             let line = &line[i..];
+            println!("これ: {:?}", line);
             if evaluator::eval(&code, line, is_depth)? {
                 return Ok((true, Some(line.into_iter().collect::<String>())));
             }
         }
+        return Ok((false, None));
     }
 
     for i in 0..line.len() {

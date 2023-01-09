@@ -168,7 +168,6 @@ impl Generator {
             AST::Star(e) => self.gen_star(e)?,
             AST::Question(e) => self.gen_question(e)?,
             AST::Seq(v) => self.gen_seq(v)?,
-            _ => unimplemented!(),
         }
         Ok(())
     }
