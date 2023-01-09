@@ -21,7 +21,7 @@ pub enum AST {
 pub struct AstState {
     pub ast: AST,
     pub has_hat: bool,
-    pub has_doller: bool,
+    pub has_dollar: bool,
 }
 
 #[derive(Debug)]
@@ -213,7 +213,7 @@ pub fn parse(expr: &str) -> Result<AstState, ParseError> {
         Ok(AstState {
             ast: ast,
             has_hat: has_hat,
-            has_doller: has_dollar,
+            has_dollar: has_dollar,
         })
     } else {
         Err(ParseError::Empty)

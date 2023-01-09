@@ -52,22 +52,21 @@ pub fn do_matching(
 ) -> Result<(bool, Option<String>), DynError> {
     let ast_state = parser::parse(expr)?;
     let code = codegen::get_code(&ast_state.ast)?;
-
     let line = line.chars().collect::<Vec<char>>();
 
     if ast_state.has_hat {
-        if evaluator::eval(&code, &line, is_depth)? {
+        // dollar
+        if evaluator::eval(&code, &line, is_depth, ast_state.has_dollar)? {
             return Ok((true, Some(line.into_iter().collect::<String>())));
         } else {
             return Ok((false, None));
         }
     }
 
-    if ast_state.has_doller {
+    if ast_state.has_dollar {
         for i in (0..line.len()).rev() {
             let line = &line[i..];
-            println!("これ: {:?}", line);
-            if evaluator::eval(&code, line, is_depth)? {
+            if evaluator::eval(&code, line, is_depth, true)? {
                 return Ok((true, Some(line.into_iter().collect::<String>())));
             }
         }
@@ -76,7 +75,7 @@ pub fn do_matching(
 
     for i in 0..line.len() {
         let line = &line[i..];
-        if evaluator::eval(&code, line, is_depth)? {
+        if evaluator::eval(&code, line, is_depth, false)? {
             return Ok((true, Some(line.into_iter().collect::<String>())));
         }
     }

@@ -128,4 +128,16 @@ mod tests {
         assert!(do_matching("うえお$", "あいうえお", true).unwrap().0);
         assert!(!do_matching("うえお$", "うえおか", true).unwrap().0);
     }
+
+    #[test]
+    fn test_ハットとダラーで完全一致() {
+        assert!(do_matching("^あいうえお$", "あいうえお", true).unwrap().0);
+        assert!(!do_matching("^あいうえお$", "あいうえおか", true).unwrap().0);
+        assert!(!do_matching("^あいうえお$", "んあいうえお", true).unwrap().0);
+        assert!(
+            !do_matching("^あいうえお$", "んあいうえおか", true)
+                .unwrap()
+                .0
+        );
+    }
 }

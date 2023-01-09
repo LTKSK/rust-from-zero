@@ -28,7 +28,10 @@ fn eval_depth(
     line: &[char],
     mut pc: usize,
     mut sp: usize,
+    backward_match: bool,
 ) -> Result<bool, EvalError> {
+    // 文字数。Match到達の際、backward_matchが有効だったらばspがlast_indexと一致しているはず
+    let last_index = line.len();
     loop {
         let next = if let Some(i) = inst.get(pc) {
             i
@@ -58,6 +61,9 @@ fn eval_depth(
                 safe_add(&mut sp, &1, || EvalError::SPOverFlow)?;
             }
             Instruction::Match => {
+                if last_index != sp && backward_match {
+                    return Ok(false);
+                }
                 return Ok(true);
             }
             Instruction::Jump(addr) => {
@@ -65,7 +71,9 @@ fn eval_depth(
                 pc = *addr;
             }
             Instruction::Split(addr1, addr2) => {
-                if eval_depth(inst, line, *addr1, sp)? || eval_depth(inst, line, *addr2, sp)? {
+                if eval_depth(inst, line, *addr1, sp, backward_match)?
+                    || eval_depth(inst, line, *addr2, sp, backward_match)?
+                {
                     return Ok(true);
                 } else {
                     return Ok(false);
@@ -77,9 +85,14 @@ fn eval_depth(
 
 /// Instructionの配列を受けて、line(入力文字列)にmatchしたらtrue、しなければfalse、例外時はEvalErrorを返す
 /// is_depthは有効の時深さ優先探索、無効の時幅優先探索(実装はTODO)を行う
-pub fn eval(inst: &[Instruction], line: &[char], is_depth: bool) -> Result<bool, EvalError> {
+pub fn eval(
+    inst: &[Instruction],
+    line: &[char],
+    is_depth: bool,
+    backward_match: bool,
+) -> Result<bool, EvalError> {
     if is_depth {
-        eval_depth(inst, line, 0, 0)
+        eval_depth(inst, line, 0, 0, backward_match)
     } else {
         Ok(false)
         // TODO
